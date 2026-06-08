@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="description" content="Measure distances and areas on floor plans and images right in your browser. Calibrate a scale, no upload, no account.">
+<title>Measure on image · floor plan distances & areas in the browser</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#c9d1d9;--muted:#8b949e;
+    --accent:#2f81f7;--ok:#3fb950;--measure:#f778ba;--r:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'SF Mono',ui-monospace,'Cascadia Code',Consolas,monospace;
+    background:var(--bg);color:var(--text);display:flex;flex-direction:column;
+    overflow:hidden;-webkit-user-select:none;user-select:none}
+  header{display:flex;align-items:center;gap:14px;padding:10px 14px;
+    border-bottom:1px solid var(--line);background:var(--panel);flex-shrink:0}
+  header h1{font-size:14px;font-weight:600;letter-spacing:.5px}
+  header h1 b{color:var(--accent);font-weight:600}
+  .scale-pill{font-size:11px;color:var(--muted);padding:4px 9px;border:1px solid var(--line);border-radius:99px}
+  .scale-pill.on{color:var(--ok);border-color:var(--ok)}
+  .toggles{margin-left:auto;display:flex;gap:10px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--muted);padding:4px 11px;cursor:pointer;font:inherit;font-size:11px}
+  .seg button.on{background:var(--accent);color:#fff}
+  .calrow-off{opacity:.4;pointer-events:none}
+  .group{border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+  .group.active{border-color:var(--accent)}
+  .ghead{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg)}
+  .gdot{width:13px;height:13px;border-radius:50%;border:1px solid var(--muted);background:transparent;cursor:pointer;flex-shrink:0;padding:0}
+  .group.active .gdot{box-shadow:0 0 0 2px var(--panel),0 0 0 3px var(--text)}
+  .gname{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;color:var(--text);font:inherit;font-size:12px;font-weight:600;padding:2px 0}
+  .gname:focus{outline:none;border-bottom-color:var(--accent)}
+  .gsum{font-size:11px;color:var(--ok);white-space:nowrap}
+  .item{display:flex;align-items:center;gap:6px;padding:5px 8px;border-top:1px solid var(--line)}
+  .iname{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;color:var(--muted);font:inherit;font-size:12px;padding:2px 0}
+  .iname:focus{outline:none;border-bottom-color:var(--accent);color:var(--text)}
+  .item .v{font-size:12px;color:var(--measure);font-weight:600;white-space:nowrap}
+  .gx{background:0;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px;flex-shrink:0}
+  .gx:hover{color:#f85149}
+  #addGroup{width:100%;background:transparent;border:1px dashed var(--line);color:var(--muted);padding:7px;border-radius:var(--r);cursor:pointer;font:inherit;font-size:11px}
+  #addGroup:hover{border-color:var(--accent);color:var(--accent)}
+  main{flex:1;display:flex;min-height:0}
+  #stage{flex:1;position:relative;overflow:hidden;background:#010409;
+    background-image:radial-gradient(circle,#1b2129 1px,transparent 1px);background-size:22px 22px}
+  canvas{position:absolute;inset:0;touch-action:none}
+  #drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;color:var(--muted);text-align:center;padding:30px;pointer-events:none}
+  #drop.hide{display:none}
+  #drop .big{font-size:44px;opacity:.4}
+  #drop button{pointer-events:auto;background:var(--accent);color:#fff;border:0;
+    padding:10px 22px;border-radius:var(--r);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  aside{width:268px;flex-shrink:0;border-left:1px solid var(--line);background:var(--panel);
+    display:flex;flex-direction:column;overflow-y:auto}
+  .blk{padding:13px 14px;border-bottom:1px solid var(--line)}
+  .blk h2{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+  .tabs{display:flex;gap:6px}
+  .tabs button{flex:1;background:transparent;border:1px solid var(--line);color:var(--text);
+    padding:9px 4px;border-radius:var(--r);cursor:pointer;font:inherit;font-size:11px;transition:.12s}
+  .tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tabs button:not(.on):hover{border-color:var(--accent)}
+  .tabs button.cal.on{background:var(--ok);border-color:var(--ok);color:#06210f}
+  .hint{font-size:11px;color:var(--muted);line-height:1.65;margin-top:9px}
+  .row{display:flex;gap:6px;margin-top:9px;align-items:center}
+  .row input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--line);color:var(--text);
+    padding:8px;border-radius:var(--r);font:inherit;font-size:13px}
+  .row input:focus{outline:none;border-color:var(--accent)}
+  .row .u{font-size:12px;color:var(--muted)}
+  .row .go{background:var(--ok);border:0;color:#06210f;padding:8px 12px;border-radius:var(--r);
+    cursor:pointer;font:inherit;font-weight:600}
+  ul{list-style:none;font-size:12px}
+  ul li{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)}
+  ul li:last-child{border:0}
+  ul li .lbl{flex:1;color:var(--muted)}
+  ul li .v{color:var(--measure);font-weight:600}
+  ul li .x{background:0;border:0;color:var(--muted);cursor:pointer;font-size:13px;padding:0 2px}
+  ul li .x:hover{color:#f85149}
+  .empty{color:var(--muted);font-style:italic;font-size:12px;padding:4px 0}
+  .total{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line);font-size:12px}
+  .total b{color:var(--ok)}
+  .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .acts button{flex:1;background:transparent;border:1px solid var(--line);color:var(--text);
+    padding:8px 4px;border-radius:var(--r);cursor:pointer;font:inherit;font-size:11px;white-space:nowrap}
+  .acts button:hover{border-color:var(--accent);color:var(--accent)}
+  .keys{font-size:10.5px;color:var(--muted);line-height:1.9}
+  .keys kbd{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font:inherit;font-size:10px;color:var(--text)}
+  .zoom{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;z-index:4}
+  .zoom button{width:34px;height:34px;background:var(--panel);border:1px solid var(--line);
+    color:var(--text);border-radius:var(--r);cursor:pointer;font-size:16px;font:inherit}
+  .zoom button:hover{border-color:var(--accent)}
+  @media(max-width:720px){
+    aside{position:fixed;right:0;top:46px;bottom:0;z-index:10;box-shadow:-8px 0 30px rgba(0,0,0,.5)}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>PIXEL<b>·SCALE</b></h1>
+  <span class="scale-pill" id="scalePill"></span>
+  <div class="toggles">
+    <div class="seg" id="unitSeg">
+      <button data-unit="m" class="on">m</button>
+      <button data-unit="ft">ft</button>
+    </div>
+    <div class="seg">
+      <button data-lang="en" class="on">EN</button>
+      <button data-lang="de">DE</button>
+    </div>
+  </div>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="drop">
+      <div class="big">⊹</div>
+      <div id="dropMain"></div>
+      <button id="pick"></button>
+      <input type="file" id="file" accept="image/*" hidden>
+    </div>
+    <div class="zoom">
+      <button id="zin" aria-label="Zoom in">+</button>
+      <button id="zout" aria-label="Zoom out">−</button>
+      <button id="zfit" aria-label="Fit">⊡</button>
+    </div>
+  </div>
+  <aside>
+    <div class="blk">
+      <h2 id="t-s1"></h2>
+      <button class="tabs cal" id="calBtn" style="width:100%"><span id="t-setCal" style="display:block"></span></button>
+      <div class="row calrow-off" id="calRow">
+        <input type="number" id="calLen" value="1" step="0.01" min="0" inputmode="decimal">
+        <span class="u" id="t-unit"></span>
+        <button class="go" id="calGo">OK</button>
+      </div>
+      <div class="hint" id="calHint"></div>
+    </div>
+    <div class="blk">
+      <h2 id="t-s2"></h2>
+      <div class="tabs">
+        <button data-mode="distance" class="on" id="t-dist"></button>
+        <button data-mode="area" id="t-area"></button>
+      </div>
+      <div class="hint" id="modeHint"></div>
+    </div>
+    <div class="blk" style="flex:1">
+      <h2 id="t-meas"></h2>
+      <div id="groups"></div>
+      <button id="addGroup"></button>
+      <div class="total" id="total" style="display:none"></div>
+    </div>
+    <div class="blk">
+      <div class="acts">
+        <button id="export"></button>
+        <button id="reset"></button>
+        <button id="newimg"></button>
+      </div>
+    </div>
+    <div class="blk">
+      <h2 id="t-ctl"></h2>
+      <div class="keys" id="keys"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+"use strict";
+const KEY='pixelscale.v1', LKEY='pixelscale.lang';
+
+const I18N={
+  en:{
+    scaleNone:'no scale', s1:'1 · Scale', setCal:'⌖ Calibrate', unit:'m',
+    calHint:'Click two points on a known distance (e.g. the 0–4 m scale bar), then enter its length.',
+    calMode:'Calibration mode active.',
+    s2:'2 · Measure', distTab:'↔ Distance', areaTab:'▱ Area',
+    distHint:'Click points along a path, double-click to finish.', areaHint:'Click corners, double-click to close.',
+    calStart:'Click the two ends of a known distance on the image.',
+    calEnter:'How long is this line in real life? Enter the length, then OK.',
+    meas:'Measurements', none:'no measurements yet', sumAreas:'Total area:',
+    addGroup:'+ group', setActive:'Set as active group', scaleLbl:'Scale',
+    cfGroup:'Delete this group and its measurements?', grp:'Group',
+    exportBtn:'⤓ Export', resetBtn:'✕ Reset', newBtn:'⊹ New',
+    ctl:'Controls', dropMain:'Drag floor plan / image here', choose:'Choose image',
+    distance:'Distance', area:'Area', calibration:'Calibration', scaleMissing:'— (no scale)',
+    alNeed2:'First click two points on the known distance.',
+    alLen:'Enter a valid length in metres.', alNoMeas:'No measurements to export.',
+    cfReset:'Delete image, scale and all measurements?',
+    keys:'<kbd>Click</kbd> place point · snaps to nearby points<br><kbd>Double-click</kbd> or <kbd>Right-click</kbd> finish &amp; save<br><kbd>Esc</kbd> discard current<br><kbd>Shift</kbd>+drag / middle mouse — pan<br><kbd>Wheel</kbd> zoom'
+  },
+  de:{
+    scaleNone:'kein Maßstab', s1:'1 · Maßstab', setCal:'⌖ Kalibrieren', unit:'m',
+    calHint:'Zwei Punkte auf eine bekannte Strecke klicken (z.B. die 0–4 m Skala), Länge eintragen.',
+    calMode:'Kalibriermodus aktiv.',
+    s2:'2 · Messen', distTab:'↔ Strecke', areaTab:'▱ Fläche',
+    distHint:'Punkte entlang einer Strecke klicken, Doppelklick beendet.', areaHint:'Eckpunkte klicken, Doppelklick schließt.',
+    calStart:'Die zwei Enden einer bekannten Strecke im Bild anklicken.',
+    calEnter:'Wie lang ist diese Linie in echt? Länge eintragen, dann OK.',
+    meas:'Messungen', none:'noch keine Messungen', sumAreas:'Summe Flächen:',
+    addGroup:'+ Gruppe', setActive:'Als aktive Gruppe setzen', scaleLbl:'Maßstab',
+    cfGroup:'Diese Gruppe samt Messungen löschen?', grp:'Gruppe',
+    exportBtn:'⤓ Export', resetBtn:'✕ Zurücksetzen', newBtn:'⊹ Neu',
+    ctl:'Steuerung', dropMain:'Grundriss / Bild hierher ziehen', choose:'Bild wählen',
+    distance:'Strecke', area:'Fläche', calibration:'Kalibrierung', scaleMissing:'— (Maßstab fehlt)',
+    alNeed2:'Erst zwei Punkte auf der bekannten Strecke klicken.',
+    alLen:'Gültige Länge in Metern eintragen.', alNoMeas:'Keine Messungen zum Exportieren.',
+    cfReset:'Bild, Maßstab und alle Messungen löschen?',
+    keys:'<kbd>Klick</kbd> Punkt setzen · rastet an Punkten ein<br><kbd>Doppelklick</kbd> oder <kbd>Rechtsklick</kbd> beenden &amp; speichern<br><kbd>Esc</kbd> aktuelle verwerfen<br><kbd>Shift</kbd>+ziehen / mittlere Maustaste — verschieben<br><kbd>Mausrad</kbd> zoomen'
+  }
+};
+let lang = localStorage.getItem(LKEY) || 'en';
+let unit = localStorage.getItem('pixelscale.unit') || 'm';
+const M2FT=3.280839895, M2IN=39.37007874, M2FT2=10.76391042, FT2M=0.3048;
+const T = ()=>I18N[lang];
+
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),stage=document.getElementById('stage'),drop=document.getElementById('drop');
+let img=null,imgSrc=null,view={s:1,x:0,y:0},pxPerM=null,mode='distance';
+let pending=[],calPending=null,mouse=null,snap=null;
+const SNAP_PX=11;
+let groups=[], activeGroupId=null;
+const uid=()=>Math.random().toString(36).slice(2,9);
+const PALETTE=['#f778ba','#3fb950','#e3b341','#a371f7','#f0883e','#56d4dd','#f85149','#58a6ff'];
+function pickColor(){const used=new Set(groups.map(g=>g.color));for(const c of PALETTE)if(!used.has(c))return c;return PALETTE[groups.length%PALETTE.length];}
+const allItems=()=>groups.flatMap(g=>g.items);
+function groupDefaultName(){return (lang==='de'?'Gruppe ':'Group ')+(groups.length+1);}
+function ensureActiveGroup(){
+  if(!groups.length){const g={id:uid(),name:groupDefaultName(),color:pickColor(),items:[]};groups.push(g);activeGroupId=g.id;}
+  if(!groups.find(g=>g.id===activeGroupId))activeGroupId=groups[0].id;
+  return groups.find(g=>g.id===activeGroupId);
+}
+function computeValue(type,pts){
+  if(!pxPerM)return null;
+  if(type==='distance'){let len=0;for(let i=0;i<pts.length-1;i++)len+=dist(pts[i],pts[i+1]);return len/pxPerM;}
+  let a=0;for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length;a+=pts[i].x*pts[j].y-pts[j].x*pts[i].y;}
+  return Math.abs(a)/2/(pxPerM*pxPerM);
+}
+function snapTargets(){const pts=[];allItems().forEach(it=>it.points.forEach(p=>pts.push(p)));
+  for(let i=0;i<pending.length-1;i++)pts.push(pending[i]);return pts;}
+function findSnap(sx,sy){let best=null,bd=SNAP_PX;for(const p of snapTargets()){const s=toScr(p);const d=Math.hypot(s.x-sx,s.y-sy);if(d<bd){bd=d;best=p;}}return best;}
+
+/* ---------- i18n apply ---------- */
+function applyLang(){
+  const t=T();
+  document.documentElement.lang=lang;
+  document.getElementById('t-s1').textContent=t.s1;
+  document.getElementById('t-setCal').textContent=t.setCal;
+  document.getElementById('t-unit').textContent=t.unit;
+  document.getElementById('calHint').textContent=t.calHint;
+  document.getElementById('t-s2').textContent=t.s2;
+  document.getElementById('t-dist').textContent=t.distTab;
+  document.getElementById('t-area').textContent=t.areaTab;
+  document.getElementById('t-meas').textContent=t.meas;
+  document.getElementById('export').textContent=t.exportBtn;
+  document.getElementById('reset').textContent=t.resetBtn;
+  document.getElementById('newimg').textContent=t.newBtn;
+  document.getElementById('t-ctl').textContent=t.ctl;
+  document.getElementById('addGroup').textContent=t.addGroup;
+  document.getElementById('keys').innerHTML=t.keys;
+  document.getElementById('dropMain').textContent=t.dropMain;
+  document.getElementById('pick').textContent=t.choose;
+  document.getElementById('modeHint').textContent = mode==='calibrate'?t.calMode:(mode==='area'?t.areaHint:t.distHint);
+  document.querySelectorAll('.seg button[data-lang]').forEach(b=>b.classList.toggle('on',b.dataset.lang===lang));
+  applyUnit();
+  updateScalePill(); renderList(); draw();
+}
+document.querySelectorAll('.seg button[data-lang]').forEach(b=>b.addEventListener('click',()=>{
+  lang=b.dataset.lang; localStorage.setItem(LKEY,lang); applyLang();
+}));
+document.querySelectorAll('.seg button[data-unit]').forEach(b=>b.addEventListener('click',()=>{
+  unit=b.dataset.unit; localStorage.setItem('pixelscale.unit',unit); applyUnit(); updateScalePill(); renderList(); draw();
+}));
+function applyUnit(){
+  document.getElementById('t-unit').textContent = unit;
+  document.querySelectorAll('.seg button[data-unit]').forEach(b=>b.classList.toggle('on',b.dataset.unit===unit));
+}
+
+/* ---------- persistence (silent) ---------- */
+let saveTimer=null;
+function save(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{
+  const data={imgSrc,pxPerM,groups,activeGroupId};
+  try{ localStorage.setItem(KEY,JSON.stringify(data)); }
+  catch(e){ try{ localStorage.setItem(KEY,JSON.stringify({...data,imgSrc:null})); }catch(_){} }
+},350); }
+function restore(){ try{
+  const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(!s)return;
+  pxPerM=s.pxPerM||null;
+  if(Array.isArray(s.groups)){ groups=s.groups; activeGroupId=s.activeGroupId||(groups[0]&&groups[0].id)||null; }
+  else if(Array.isArray(s.measurements)&&s.measurements.length){
+    const g={id:uid(),name:(lang==='de'?'Gruppe 1':'Group 1'),color:PALETTE[0],items:s.measurements.map((m,i)=>({id:uid(),type:m.type,points:m.points,value:m.value,name:(m.type==='area'?T().area:T().distance)+' '+(i+1)}))};
+    groups=[g]; activeGroupId=g.id;
+  }
+  groups.forEach((g,i)=>{if(!g.color)g.color=PALETTE[i%PALETTE.length];});
+  if(s.imgSrc){ imgSrc=s.imgSrc; const im=new Image(); im.onload=()=>{img=im;drop.classList.add('hide');fit();}; im.src=s.imgSrc; }
+}catch(e){} }
+
+/* ---------- load image ---------- */
+function loadFile(f){
+  const r=new FileReader();
+  r.onload=e=>{ const im=new Image(); im.onload=()=>{
+    const MAX=2400,sc=Math.min(1,MAX/Math.max(im.width,im.height));
+    const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); imgSrc=c.toDataURL('image/jpeg',0.85);
+    const im2=new Image(); im2.onload=()=>{img=im2;drop.classList.add('hide');pending=[];calPending=null;fit();save();}; im2.src=imgSrc;
+  }; im.src=e.target.result; };
+  r.readAsDataURL(f);
+}
+file.addEventListener('change',e=>e.target.files[0]&&loadFile(e.target.files[0]));
+pick.addEventListener('click',()=>file.click());
+newimg.addEventListener('click',()=>file.click());
+stage.addEventListener('dragover',e=>e.preventDefault());
+stage.addEventListener('drop',e=>{e.preventDefault();e.dataTransfer.files[0]&&loadFile(e.dataTransfer.files[0]);});
+
+/* ---------- view ---------- */
+function resize(){cv.width=stage.clientWidth;cv.height=stage.clientHeight;draw();}
+addEventListener('resize',resize);
+function fit(){if(!img)return;const p=40,sx=(cv.width-p*2)/img.width,sy=(cv.height-p*2)/img.height;
+  view.s=Math.min(sx,sy);view.x=(cv.width-img.width*view.s)/2;view.y=(cv.height-img.height*view.s)/2;draw();}
+function zoomAt(sx,sy,f){const ix=(sx-view.x)/view.s,iy=(sy-view.y)/view.s;view.s*=f;view.x=sx-ix*view.s;view.y=sy-iy*view.s;draw();}
+zin.onclick=()=>zoomAt(cv.width/2,cv.height/2,1.25);
+zout.onclick=()=>zoomAt(cv.width/2,cv.height/2,.8);
+zfit.onclick=fit;
+cv.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.offsetX,e.offsetY,e.deltaY<0?1.1:.9);},{passive:false});
+const toImg=(x,y)=>({x:(x-view.x)/view.s,y:(y-view.y)/view.s});
+const toScr=p=>({x:p.x*view.s+view.x,y:p.y*view.s+view.y});
+
+/* ---------- pan ---------- */
+let pan=false,panOff=null;
+cv.addEventListener('pointerdown',e=>{if(e.button===1||e.shiftKey){pan=true;panOff={x:e.offsetX-view.x,y:e.offsetY-view.y};cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing';e.preventDefault();}});
+cv.addEventListener('pointermove',e=>{mouse={x:e.offsetX,y:e.offsetY};
+  if(pan){view.x=e.offsetX-panOff.x;view.y=e.offsetY-panOff.y;}
+  else snap=(img&&(mode==='distance'||mode==='area'))?findSnap(e.offsetX,e.offsetY):null;
+  draw();});
+cv.addEventListener('pointerup',()=>{if(pan){pan=false;cv.style.cursor='crosshair';}});
+
+/* ---------- placing ---------- */
+function pointAt(x,y){const sp=findSnap(x,y);return sp?{x:sp.x,y:sp.y}:toImg(x,y);}
+cv.addEventListener('click',e=>{if(!img||pan)return;
+  if(mode==='calibrate'){const p=toImg(e.offsetX,e.offsetY);
+    if(!calPending)calPending=[p];
+    else if(calPending.length<2){calPending.push(p); setCalRow(true); calLen.focus(); calLen.select(); document.getElementById('calHint').textContent=T().calEnter;}
+    draw();return;}
+  pending.push(pointAt(e.offsetX,e.offsetY)); draw();});
+cv.addEventListener('dblclick',()=>{finishPending();});
+cv.addEventListener('contextmenu',e=>{e.preventDefault();
+  if(pending.length)finishPending();
+  else if(calPending){calPending=null;setCalRow(false);document.getElementById('calHint').textContent=T().calStart;draw();}});
+addEventListener('keydown',e=>{if(e.key==='Escape')cancelAll();});
+function dedupe(){for(let i=pending.length-1;i>0;i--){const a=toScr(pending[i]),b=toScr(pending[i-1]);if(Math.hypot(a.x-b.x,a.y-b.y)<4)pending.splice(i,1);}}
+function finishPending(){if(!pending.length)return;dedupe();
+  if(mode==='distance'&&pending.length>=2)addItem('distance',[...pending]);
+  else if(mode==='area'&&pending.length>=3)addItem('area',[...pending]);
+  pending=[];snap=null;draw();}
+function cancelAll(){
+  if(pending.length)pending=[];
+  else if(calPending){calPending=null;setCalRow(false);document.getElementById('calHint').textContent=T().calStart;}
+  snap=null;draw();}
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function addItem(type,pts){const g=ensureActiveGroup();
+  const n=g.items.filter(i=>i.type===type).length+1;
+  const base=type==='area'?T().area:T().distance;
+  g.items.push({id:uid(),type,points:pts,value:computeValue(type,pts),name:base+' '+n});after();}
+function after(){renderList();draw();save();}
+
+/* ---------- calibrate ---------- */
+function setCalRow(on){document.getElementById('calRow').classList.toggle('calrow-off',!on);}
+calBtn.addEventListener('click',()=>{mode='calibrate';calPending=null;pending=[];syncTabs();
+  setCalRow(false);calLen.value='1';document.getElementById('calHint').textContent=T().calStart;calBtn.classList.add('on');draw();});
+calGo.addEventListener('click',applyCal);
+calLen.addEventListener('keydown',e=>{if(e.key==='Enter')applyCal();});
+function applyCal(){const L=parseFloat(calLen.value);
+  if(!calPending||calPending.length<2){alert(T().alNeed2);return;}
+  if(!(L>0)){alert(T().alLen);return;}
+  const Lm = unit==='ft' ? L*FT2M : L;
+  pxPerM=dist(calPending[0],calPending[1])/Lm;
+  allItems().forEach(m=>m.value=computeValue(m.type,m.points));
+  calPending=null;calBtn.classList.remove('on');setCalRow(false);mode='distance';syncTabs();
+  document.getElementById('calHint').textContent=T().calHint;
+  document.getElementById('modeHint').textContent=T().distHint;updateScalePill();renderList();draw();save();}
+function updateScalePill(){const p=document.getElementById('scalePill');
+  if(pxPerM){const v = unit==='ft' ? pxPerM*FT2M : pxPerM; p.textContent=v.toFixed(1)+' px/'+unit;p.classList.add('on');}else{p.textContent=T().scaleNone;p.classList.remove('on');}}
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabs button[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  mode=b.dataset.mode;pending=[];calPending=null;calBtn.classList.remove('on');setCalRow(false);
+  document.getElementById('calHint').textContent=T().calHint;syncTabs();
+  document.getElementById('modeHint').textContent=mode==='area'?T().areaHint:T().distHint;draw();}));
+function syncTabs(){document.querySelectorAll('.tabs button[data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===mode&&mode!=='calibrate'));}
+
+/* ---------- list/export/reset ---------- */
+function fmt(v,t){if(v===null)return T().scaleMissing;
+  if(unit==='ft'){ if(t==='area')return (v*M2FT2).toFixed(2)+' ft²'; const ft=v*M2FT; return ft<1?(v*M2IN).toFixed(1)+' in':ft.toFixed(2)+' ft'; }
+  if(t==='area')return v.toFixed(2)+' m²'; return v<1?(v*100).toFixed(1)+' cm':v.toFixed(2)+' m';}
+function fmtArea(s){return unit==='ft'?(s*M2FT2).toFixed(2)+' ft²':s.toFixed(2)+' m²';}
+function renderList(){const wrap=document.getElementById('groups');wrap.innerHTML='';
+  if(!groups.length){wrap.innerHTML=`<div class="empty">${T().none}</div>`;}
+  groups.forEach(g=>{
+    const gd=document.createElement('div');gd.className='group'+(g.id===activeGroupId?' active':'');
+    const hd=document.createElement('div');hd.className='ghead';
+    const dot=document.createElement('button');dot.className='gdot';dot.title=T().setActive;
+    dot.style.background=g.color;dot.style.borderColor=g.color;
+    dot.onclick=()=>{activeGroupId=g.id;renderList();save();};
+    const gname=document.createElement('input');gname.className='gname';gname.value=g.name;gname.style.color=g.color;
+    gname.oninput=()=>{g.name=gname.value;save();};
+    const gsum=document.createElement('span');gsum.className='gsum';
+    const ar=g.items.filter(i=>i.type==='area'&&i.value!==null);
+    if(ar.length)gsum.textContent=fmtArea(ar.reduce((a,i)=>a+i.value,0));
+    const gdel=document.createElement('button');gdel.className='gx';gdel.textContent='✕';
+    gdel.onclick=()=>{if(!confirm(T().cfGroup))return;groups=groups.filter(x=>x.id!==g.id);if(activeGroupId===g.id)activeGroupId=(groups[0]&&groups[0].id)||null;after();};
+    hd.append(dot,gname,gsum,gdel);gd.append(hd);
+    g.items.forEach(it=>{
+      const row=document.createElement('div');row.className='item';
+      const iname=document.createElement('input');iname.className='iname';iname.value=it.name;
+      iname.oninput=()=>{it.name=iname.value;save();};
+      const v=document.createElement('span');v.className='v';v.textContent=fmt(it.value,it.type);v.style.color=g.color;
+      const del=document.createElement('button');del.className='gx';del.textContent='✕';
+      del.onclick=()=>{g.items=g.items.filter(x=>x.id!==it.id);after();};
+      row.append(iname,v,del);gd.append(row);
+    });
+    wrap.append(gd);
+  });
+  const allAr=allItems().filter(i=>i.type==='area'&&i.value!==null);
+  const total=document.getElementById('total');
+  if(allAr.length){total.style.display='block';total.innerHTML=`${T().sumAreas} <b>${fmtArea(allAr.reduce((a,i)=>a+i.value,0))}</b>`;}
+  else total.style.display='none';}
+/* ---------- PDF export (no external library) ---------- */
+const measCtx=document.createElement('canvas').getContext('2d');
+function hexN(h){return [parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255];}
+function pesc(s){return String(s).replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)');}
+function lat1(s){let o='';for(const ch of s){const c=ch.codePointAt(0);o+=c<256?String.fromCharCode(c):'?';}return o;}
+function renderAnnotated(){
+  const c=document.createElement('canvas');c.width=img.width;c.height=img.height;const x=c.getContext('2d');
+  x.drawImage(img,0,0);
+  const lw=Math.max(2,img.width/650),dr=Math.max(3,img.width/320),fs=Math.max(13,Math.round(img.width/75));
+  groups.forEach(g=>g.items.forEach(m=>{const p=m.points;
+    x.lineWidth=lw;x.strokeStyle=g.color;x.fillStyle=g.color+'22';
+    x.beginPath();p.forEach((q,i)=>i?x.lineTo(q.x,q.y):x.moveTo(q.x,q.y));
+    if(m.type==='area'){x.closePath();x.fill();}x.stroke();
+    x.fillStyle=g.color;p.forEach(q=>{x.beginPath();x.arc(q.x,q.y,dr,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=Math.max(1,lw*0.6);x.stroke();x.lineWidth=lw;});
+    let cx=0,cy=0;p.forEach(q=>{cx+=q.x;cy+=q.y;});cx/=p.length;cy/=p.length;
+    const t=fmt(m.value,m.type);x.font='bold '+fs+'px Helvetica,Arial,sans-serif';
+    const tw2=x.measureText(t).width,th=fs*1.3;
+    x.fillStyle='rgba(13,17,23,.82)';x.fillRect(cx-tw2/2-4,cy-th,tw2+8,th);
+    x.fillStyle=g.color;x.textAlign='center';x.textBaseline='middle';x.fillText(t,cx,cy-th/2);
+  }));
+  return c.toDataURL('image/jpeg',0.9);
+}
+function buildPDF(jpeg,iw,ih,content){
+  const o=[];
+  o[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  o[2]='<< /Type /Pages /Kids [3 0 R] /Count 1 >>';
+  o[3]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /XObject << /Im0 5 0 R >> /Font << /F1 6 0 R /F2 7 0 R >> >> /Contents 4 0 R >>';
+  o[4]='<< /Length '+content.length+' >>\nstream\n'+content+'\nendstream';
+  o[5]='<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+jpeg.length+' >>\nstream\n'+jpeg+'\nendstream';
+  o[6]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  o[7]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  let pdf='%PDF-1.4\n';const off=[];
+  for(let i=1;i<=7;i++){off[i]=pdf.length;pdf+=i+' 0 obj\n'+o[i]+'\nendobj\n';}
+  const xref=pdf.length;pdf+='xref\n0 8\n0000000000 65535 f \n';
+  for(let i=1;i<=7;i++)pdf+=String(off[i]).padStart(10,'0')+' 00000 n \n';
+  pdf+='trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+  const b=new Uint8Array(pdf.length);for(let i=0;i<pdf.length;i++)b[i]=pdf.charCodeAt(i)&0xff;return b;
+}
+function exportPDF(){
+  if(!allItems().length||!img){alert(T().alNoMeas);return;}
+  const dataUrl=renderAnnotated();const jpeg=atob(dataUrl.split(',')[1]);
+  const DARK='0.14 0.16 0.18 rg ',GRAY='0.34 0.38 0.42 rg ';
+  function txt(x,y,f,sz,colOp,str){return colOp+'BT /'+f+' '+sz+' Tf 1 0 0 1 '+x.toFixed(1)+' '+y.toFixed(1)+' Tm ('+lat1(pesc(str))+') Tj ET\n';}
+  function tw(str,sz){measCtx.font=sz+'px Helvetica,Arial,sans-serif';return measCtx.measureText(str).width;}
+  const m=28,colX=560,rightEdge=820,boxW=colX-16-m,boxH=595-2*m;
+  const sc=Math.min(boxW/img.width,boxH/img.height),dw=img.width*sc,dh=img.height*sc,ix=m,iy=595-m-dh;
+  let cs='q '+dw.toFixed(2)+' 0 0 '+dh.toFixed(2)+' '+ix.toFixed(2)+' '+iy.toFixed(2)+' cm /Im0 Do Q\n';
+  let y=595-m-6;
+  cs+=txt(colX,y,'F2',15,DARK,T().meas);y-=20;
+  const scaleStr=pxPerM?(unit==='ft'?(pxPerM*FT2M).toFixed(1)+' px/ft':pxPerM.toFixed(1)+' px/m'):'—';
+  cs+=txt(colX,y,'F1',8.5,GRAY,T().scaleLbl+': '+scaleStr+'  ·  '+new Date().toLocaleDateString());y-=18;
+  const truncate=(s,sz,maxW)=>{if(tw(s,sz)<=maxW)return s;let r=s;while(r.length>1&&tw(r+'..',sz)>maxW)r=r.slice(0,-1);return r+'..';};
+  groups.forEach(g=>{
+    if(y<m+24)return;
+    const rgb=hexN(g.color);
+    cs+=rgb[0].toFixed(3)+' '+rgb[1].toFixed(3)+' '+rgb[2].toFixed(3)+' rg '+colX+' '+(y-8).toFixed(1)+' 9 9 re f\n';
+    cs+=txt(colX+15,y,'F2',11,DARK,truncate(g.name,11,rightEdge-colX-15-70));
+    const ar=g.items.filter(i=>i.type==='area'&&i.value!==null);
+    if(ar.length){const sum=fmtArea(ar.reduce((a,i)=>a+i.value,0));cs+=txt(rightEdge-tw(sum,9),y,'F1',9,GRAY,sum);}
+    y-=16;
+    g.items.forEach(it=>{
+      if(y<m+12)return;
+      const v=fmt(it.value,it.type),vw=tw(v,9.5);
+      cs+=txt(colX+15,y,'F1',9.5,DARK,truncate(it.name,9.5,rightEdge-colX-15-vw-10));
+      cs+=txt(rightEdge-vw,y,'F1',9.5,GRAY,v);y-=13;
+    });
+    y-=6;
+  });
+  const allAr=allItems().filter(i=>i.type==='area'&&i.value!==null);
+  if(allAr.length&&y>m+14){const s=fmtArea(allAr.reduce((a,i)=>a+i.value,0));
+    cs+='0.5 0.5 0.5 RG 0.5 w '+colX+' '+(y+2).toFixed(1)+' m '+rightEdge+' '+(y+2).toFixed(1)+' l S\n';y-=14;
+    cs+=txt(colX,y,'F2',10,DARK,T().sumAreas+' '+s);}
+  const bytes=buildPDF(jpeg,img.width,img.height,cs);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));a.download='floorplan-measurements.pdf';a.click();
+}
+document.getElementById('addGroup').onclick=()=>{const g={id:uid(),name:groupDefaultName(),color:pickColor(),items:[]};groups.push(g);activeGroupId=g.id;after();};
+document.getElementById('export').onclick=exportPDF;
+reset.onclick=()=>{if(!confirm(T().cfReset))return;img=null;imgSrc=null;pxPerM=null;groups=[];activeGroupId=null;pending=[];calPending=null;
+  localStorage.removeItem(KEY);drop.classList.remove('hide');setCalRow(false);updateScalePill();renderList();draw();};
+
+/* ---------- draw ---------- */
+function draw(){ctx.clearRect(0,0,cv.width,cv.height);if(!img)return;
+  ctx.imageSmoothingEnabled=view.s<2;ctx.drawImage(img,view.x,view.y,img.width*view.s,img.height*view.s);
+  groups.forEach(g=>g.items.forEach(m=>poly(m.points,g.color,fmt(m.value,m.type),m.type==='area')));
+  if(calPending){const lv=(calPending.length===1&&mouse)?[calPending[0],toImg(mouse.x,mouse.y)]:calPending;line(lv,'#2f81f7',T().calibration);}
+  if(pending.length){const cur=snap?snap:(mouse?toImg(mouse.x,mouse.y):null);const lv=cur?[...pending,cur]:[...pending];
+    const ag=groups.find(g=>g.id===activeGroupId);const pc=ag?ag.color:pickColor();
+    poly(lv,pc,'',false);}
+  if(snap){const s=toScr(snap);ctx.beginPath();ctx.arc(s.x,s.y,7,0,7);ctx.strokeStyle='#2f81f7';ctx.lineWidth=2;ctx.stroke();}}
+function line(p,c,lab){if(!p.length)return;const a=toScr(p[0]);ctx.lineWidth=2;ctx.strokeStyle=c;ctx.fillStyle=c;dot(a);
+  if(p.length>1){const b=toScr(p[1]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();dot(b);if(lab)tag((a.x+b.x)/2,(a.y+b.y)/2,lab,c);}}
+function poly(p,c,lab,closed){if(!p.length)return;ctx.lineWidth=2;ctx.strokeStyle=c;ctx.fillStyle=c+'22';
+  ctx.beginPath();p.forEach((q,i)=>{const s=toScr(q);i?ctx.lineTo(s.x,s.y):ctx.moveTo(s.x,s.y);});
+  if(closed)ctx.closePath();if(closed&&p.length>=3)ctx.fill();ctx.stroke();ctx.fillStyle=c;p.forEach(q=>dot(toScr(q)));
+  if(lab){let cx=0,cy=0;p.forEach(q=>{const s=toScr(q);cx+=s.x;cy+=s.y;});tag(cx/p.length,cy/p.length,lab,c);}}
+function dot(s){ctx.beginPath();ctx.arc(s.x,s.y,4,0,7);ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();ctx.lineWidth=2;}
+function tag(x,y,t,c){ctx.font='600 13px ui-monospace,monospace';const w=ctx.measureText(t).width;
+  ctx.fillStyle='rgba(13,17,23,.92)';ctx.fillRect(x-w/2-6,y-22,w+12,18);
+  ctx.fillStyle=c;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,x,y-13);}
+
+resize(); restore(); applyLang();
+</script>
+</body>
+</html>
