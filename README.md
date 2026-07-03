@@ -1,4 +1,4 @@
-# PixelScale]([https://www.example.com](https://bohannjein.github.io/pixelscale/))
+# PixelScale](https://bohannjein.github.io/pixelscale/))
 
 
 Measure real-world distances and areas directly on floor plans, blueprints, maps, or any image — right in the browser. Calibrate once against a known length and every click becomes a real measurement. No upload, no account, no server: the image and all measurements stay in your browser via `localStorage` and survive a reload.
