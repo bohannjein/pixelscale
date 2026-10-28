@@ -217,6 +217,10 @@
   .zoom button:hover{background:var(--fill)}
   .zoom button:active{background:var(--fill-hover);transform:scale(.94)}
   .zoom .sep{width:1px;height:18px;margin:0 2px;background:var(--sep)}
+  .zoom button:disabled{opacity:.35;cursor:default;background:transparent;transform:none}
+  #pager{display:flex;align-items:center;gap:2px;animation:enter .38s var(--ease) both}
+  #pager[hidden]{display:none}
+  #pgLbl{min-width:44px;text-align:center;font-size:11px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
   #drop{position:fixed;top:68px;left:12px;right:304px;bottom:12px;z-index:3;display:flex;align-items:center;justify-content:center;
     padding:24px;pointer-events:none}
   #drop.hide{display:none}
@@ -275,13 +279,16 @@
   <symbol id="i-area" viewBox="0 0 24 24"><path d="M5 8.5 11.5 4l8 5.5-2.5 10H6.5z"/></symbol>
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12.5a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5L18 7M9 7V4.5h6V7"/></symbol>
-  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="9.5" r="1.5"/><path d="m21 15-5-5-9.5 10"/></symbol>
+  <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11.5v6M9 14.5h6"/></symbol>
   <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
   <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V6a2 2 0 0 1 2-2h3M15 4h3a2 2 0 0 1 2 2v3M20 15v3a2 2 0 0 1-2 2h-3M9 20H6a2 2 0 0 1-2-2v-3"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
-  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+  <symbol id="i-sun"viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
   <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
 </svg>
 
@@ -310,11 +317,11 @@
 
 <div id="drop">
   <div class="drop-card glass">
-    <div class="drop-ic"><svg class="ic"><use href="#i-upload"/></svg></div>
+    <div class="drop-ic"><svg class="ic"><use href="#i-import"/></svg></div>
     <h1 id="dropMain">Measure floor plans online</h1>
-    <p id="dropSub">Drop a floor plan, blueprint or image here to measure distances and areas. It stays on your device — nothing is uploaded.</p>
-    <button class="btn primary" id="pick"><svg class="ic"><use href="#i-image"/></svg><span id="t-pick">Choose image</span></button>
-    <input type="file" id="file" accept="image/*" hidden>
+    <p id="dropSub">Drop a floor plan, blueprint, image or PDF here to measure distances and areas. It stays on your device — nothing is uploaded.</p>
+    <button class="btn primary" id="pick"><svg class="ic"><use href="#i-import"/></svg><span id="t-pick">Import</span></button>
+    <input type="file" id="file" accept="image/*,application/pdf,.pdf" hidden>
   </div>
 </div>
 
@@ -323,6 +330,12 @@
   <button id="zout" aria-label="Zoom out"><svg class="ic"><use href="#i-minus"/></svg></button>
   <span class="sep"></span>
   <button id="zfit" aria-label="Fit"><svg class="ic"><use href="#i-fit"/></svg></button>
+  <div id="pager" hidden>
+    <span class="sep"></span>
+    <button id="pgPrev" aria-label="Previous page"><svg class="ic"><use href="#i-prev"/></svg></button>
+    <span id="pgLbl"></span>
+    <button id="pgNext" aria-label="Next page"><svg class="ic"><use href="#i-next"/></svg></button>
+  </div>
 </div>
 
 <aside class="glass">
@@ -355,7 +368,7 @@
   <div class="blk">
     <div class="acts">
       <button class="btn primary" id="export"><svg class="ic"><use href="#i-down"/></svg><span id="t-export"></span></button>
-      <button class="btn" id="newimg"><svg class="ic"><use href="#i-image"/></svg><span id="t-new"></span></button>
+      <button class="btn" id="newimg"><svg class="ic"><use href="#i-file"/></svg><span id="t-new"></span></button>
       <button class="btn danger" id="reset"><svg class="ic"><use href="#i-trash"/></svg><span id="t-reset"></span></button>
     </div>
   </div>
@@ -390,13 +403,14 @@ const I18N={
     meas:'Measurements', none:'No measurements yet', sumAreas:'Total area',
     addGroup:'Add group', setActive:'Set as active group', scaleLbl:'Scale',
     cfGroup:'Delete this group and its measurements?', grp:'Group',
-    exportBtn:'Export PDF', resetBtn:'Reset', newBtn:'New image',
-    ctl:'Controls', dropMain:'Measure floor plans online', dropSub:'Drop a floor plan, blueprint or image here to measure distances and areas. It stays on your device — nothing is uploaded.', choose:'Choose image',
+    exportBtn:'Export PDF', resetBtn:'Reset', newBtn:'New',
+    ctl:'Controls', dropMain:'Measure floor plans online', dropSub:'Drop a floor plan, blueprint, image or PDF here to measure distances and areas. It stays on your device — nothing is uploaded.', choose:'Import',
     distance:'Distance', area:'Area', calibration:'Calibration', scaleMissing:'— (no scale)',
     alNeed2:'First click two points on the known distance.',
     alLen:'Enter a valid length in metres.', alNoMeas:'No measurements to export.',
     cfReset:'Delete image, scale and all measurements?',
     cancel:'Cancel', del:'Delete', resetConfirm:'Reset', theme:'Toggle dark / light mode',
+    fileFail:'This file can’t be opened. Try an image or a PDF.', page:'Page',
     keys:'<kbd>Click</kbd> place point · snaps to nearby points<br><kbd>Double-click</kbd> or <kbd>Right-click</kbd> finish &amp; save<br><kbd>Esc</kbd> discard current<br><kbd>Shift</kbd> + drag / middle mouse — pan<br><kbd>Wheel</kbd> zoom'
   },
   de:{
@@ -410,13 +424,14 @@ const I18N={
     meas:'Messungen', none:'Noch keine Messungen', sumAreas:'Summe Flächen',
     addGroup:'Gruppe hinzufügen', setActive:'Als aktive Gruppe setzen', scaleLbl:'Maßstab',
     cfGroup:'Diese Gruppe samt Messungen löschen?', grp:'Gruppe',
-    exportBtn:'PDF exportieren', resetBtn:'Zurücksetzen', newBtn:'Neues Bild',
-    ctl:'Steuerung', dropMain:'Grundriss online ausmessen', dropSub:'Grundriss, Bauplan oder Bild hierher ziehen, um Strecken und Flächen zu messen. Bleibt auf deinem Gerät — nichts wird hochgeladen.', choose:'Bild wählen',
+    exportBtn:'PDF exportieren', resetBtn:'Zurücksetzen', newBtn:'Neu',
+    ctl:'Steuerung', dropMain:'Grundriss online ausmessen', dropSub:'Grundriss, Bauplan, Bild oder PDF hierher ziehen, um Strecken und Flächen zu messen. Bleibt auf deinem Gerät — nichts wird hochgeladen.', choose:'Importieren',
     distance:'Strecke', area:'Fläche', calibration:'Kalibrierung', scaleMissing:'— (Maßstab fehlt)',
     alNeed2:'Erst zwei Punkte auf der bekannten Strecke klicken.',
     alLen:'Gültige Länge in Metern eintragen.', alNoMeas:'Keine Messungen zum Exportieren.',
     cfReset:'Bild, Maßstab und alle Messungen löschen?',
     cancel:'Abbrechen', del:'Löschen', resetConfirm:'Zurücksetzen', theme:'Dunkel / Hell umschalten',
+    fileFail:'Diese Datei lässt sich nicht öffnen. Ein Bild oder eine PDF versuchen.', page:'Seite',
     keys:'<kbd>Klick</kbd> Punkt setzen · rastet an Punkten ein<br><kbd>Doppelklick</kbd> oder <kbd>Rechtsklick</kbd> beenden &amp; speichern<br><kbd>Esc</kbd> aktuelle verwerfen<br><kbd>Shift</kbd> + ziehen / mittlere Maustaste — verschieben<br><kbd>Mausrad</kbd> zoomen'
   }
 };
@@ -539,17 +554,48 @@ function restore(){ try{
   if(s.imgSrc){ imgSrc=s.imgSrc; const im=new Image(); im.onload=()=>{img=im;drop.classList.add('hide');fit();}; im.src=s.imgSrc; }
 }catch(e){} }
 
-/* ---------- load image ---------- */
+/* ---------- load image / PDF ---------- */
+const MAX_EDGE=2400;
+// flatten onto white so transparent PNG/SVG/PDF pages don't turn black as JPEG
+function whiteCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);return c;}
+function setImage(src){imgSrc=src;
+  const im2=new Image(); im2.onload=()=>{img=im2;drop.classList.add('hide');pending=[];calPending=null;fit();save();}; im2.src=imgSrc;}
+const isPdf=f=>f.type==='application/pdf'||/\.pdf$/i.test(f.name);
 function loadFile(f){
+  if(isPdf(f))return loadPdf(f);
   const r=new FileReader();
   r.onload=e=>{ const im=new Image(); im.onload=()=>{
-    const MAX=2400,sc=Math.min(1,MAX/Math.max(im.width,im.height));
-    const c=document.createElement('canvas'); c.width=Math.round(im.width*sc); c.height=Math.round(im.height*sc);
-    c.getContext('2d').drawImage(im,0,0,c.width,c.height); imgSrc=c.toDataURL('image/jpeg',0.85);
-    const im2=new Image(); im2.onload=()=>{img=im2;drop.classList.add('hide');pending=[];calPending=null;fit();save();}; im2.src=imgSrc;
-  }; im.src=e.target.result; };
+    pdfDoc=null;syncPager();
+    const w=im.naturalWidth||1600,h=im.naturalHeight||1200,sc=Math.min(1,MAX_EDGE/Math.max(w,h));
+    const c=whiteCanvas(Math.round(w*sc),Math.round(h*sc));
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); setImage(c.toDataURL('image/jpeg',0.85));
+  }; im.onerror=()=>notify(T().fileFail); im.src=e.target.result; };
   r.readAsDataURL(f);
 }
+
+/* PDF support: pdf.js is bundled in vendor/ and only loaded when a PDF is opened */
+let pdfDoc=null,pdfPage=1,pdfBusy=false;
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.append(s);});}
+async function getPdfjs(){
+  if(!window.pdfjsLib){await loadScript('vendor/pdfjs/pdf.min.js');pdfjsLib.GlobalWorkerOptions.workerSrc='vendor/pdfjs/pdf.worker.min.js';}
+  return window.pdfjsLib;}
+async function loadPdf(f){
+  try{const lib=await getPdfjs();
+    const doc=await lib.getDocument({data:new Uint8Array(await f.arrayBuffer()),isEvalSupported:false}).promise;
+    pdfDoc=doc;await showPdfPage(1);}
+  catch(e){pdfDoc=null;syncPager();notify(T().fileFail);}}
+async function showPdfPage(n){if(!pdfDoc||pdfBusy)return;pdfBusy=true;
+  try{const page=await pdfDoc.getPage(n),v1=page.getViewport({scale:1});
+    const vp=page.getViewport({scale:MAX_EDGE/Math.max(v1.width,v1.height)});
+    const c=whiteCanvas(Math.round(vp.width),Math.round(vp.height));
+    // 'print' intent renders without requestAnimationFrame, so it also finishes in background tabs
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp,intent:'print'}).promise;
+    pdfPage=n;syncPager();setImage(c.toDataURL('image/jpeg',0.85));}
+  finally{pdfBusy=false;}}
+function syncPager(){const n=pdfDoc?pdfDoc.numPages:0;pager.hidden=n<2;if(n<2)return;
+  pgLbl.textContent=pdfPage+' / '+n;pgLbl.title=T().page+' '+pdfPage;pgPrev.disabled=pdfPage<=1;pgNext.disabled=pdfPage>=n;}
+pgPrev.onclick=()=>showPdfPage(pdfPage-1);
+pgNext.onclick=()=>showPdfPage(pdfPage+1);
 file.addEventListener('change',e=>{e.target.files[0]&&loadFile(e.target.files[0]);e.target.value='';});
 pick.addEventListener('click',()=>file.click());
 newimg.addEventListener('click',()=>file.click());
@@ -766,7 +812,7 @@ function exportPDF(){
 }
 document.getElementById('addGroup').onclick=()=>{const g={id:uid(),name:groupDefaultName(),color:pickColor(),items:[]};groups.push(g);activeGroupId=g.id;after();};
 document.getElementById('export').onclick=exportPDF;
-reset.onclick=async()=>{if(!await ask(T().cfReset,T().resetConfirm))return;img=null;imgSrc=null;pxPerM=null;groups=[];activeGroupId=null;pending=[];calPending=null;
+reset.onclick=async()=>{if(!await ask(T().cfReset,T().resetConfirm))return;img=null;imgSrc=null;pxPerM=null;groups=[];activeGroupId=null;pending=[];calPending=null;pdfDoc=null;syncPager();
   localStorage.removeItem(KEY);drop.classList.remove('hide');setCalRow(false);updateScalePill();renderList();draw();};
 
 /* ---------- draw ---------- */

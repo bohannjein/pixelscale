@@ -4,7 +4,7 @@
 
 <a href="https://bohannjein.github.io/pixelscale/"><img src="assets/open-tool.svg" alt="Open PixelScale – measure floor plans online" height="56"></a>
 
-PixelScale is a free online tool to measure square footage and room sizes from a floor plan image. Upload a floor plan (JPG or PNG), calibrate the scale once against a known length, and every click becomes a real-world measurement in metres, centimetres, square metres, feet, inches or square feet. Export the annotated plan with all measurements as a PDF.
+PixelScale is a free online tool to measure square footage and room sizes from a floor plan image. Open a floor plan (JPG, PNG or PDF), calibrate the scale once against a known length, and every click becomes a real-world measurement in metres, centimetres, square metres, feet, inches or square feet. Export the annotated plan with all measurements as a PDF.
 
 Everything runs locally in your browser. Your floor plan is never uploaded to a server, and there is no account, no tracking and no cost.
 
@@ -28,11 +28,11 @@ Everything runs locally in your browser. Your floor plan is never uploaded to a 
 - **Dark and light mode** – follows your system setting, with a manual toggle.
 - **English and German** interface.
 - **Private by design** – image and measurements are saved only in your browser (`localStorage`) and survive a reload.
-- **Works offline** – a single static `index.html` with no dependencies and no external requests.
+- **No external requests** – a static `index.html`; PDF support uses a bundled copy of pdf.js that is loaded only when you open a PDF.
 
 ## How to measure a floor plan in 4 steps
 
-1. Open [PixelScale](https://bohannjein.github.io/pixelscale/) and drag your floor plan onto the page, or click **Choose image**.
+1. Open [PixelScale](https://bohannjein.github.io/pixelscale/) and drag your floor plan onto the page, or click **Import**.
 2. Click **Calibrate**, click both ends of a known distance on the plan, enter its real length and press **OK**.
 3. Choose **Distance** or **Area** and click the points. Double-click or right-click to finish a measurement.
 4. Rename groups and measurements if you like, then click **Export PDF**.
@@ -62,7 +62,7 @@ No. The image is processed entirely in your browser. Nothing is sent to a server
 Yes, completely free, with no account and no ads.
 
 ### Which file types are supported?
-Any image your browser can open, such as JPG, PNG, WebP or GIF. For PDF plans, take a screenshot or export the page as an image first.
+PDF files and any image your browser can open, such as JPG, PNG, WebP, GIF or SVG. For multi-page PDFs you can switch pages next to the zoom controls.
 
 ### How accurate are the measurements?
 Accuracy depends on the calibration and the image resolution. Zoom in on the ends of the reference line before calibrating for the best result.
@@ -80,7 +80,7 @@ PixelScale ist ein kostenloses Online-Tool, um **Grundrisse auszumessen** und di
 
 ## Self-hosting
 
-PixelScale is one static HTML file. Download `index.html` and open it locally, or host it on GitHub Pages or any web server.
+PixelScale is a static site: `index.html` plus `vendor/pdfjs` for PDF support. Host it on GitHub Pages or any web server, or open `index.html` locally.
 
 ## License
 
