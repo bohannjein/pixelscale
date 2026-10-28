@@ -2,7 +2,7 @@
 
 **Measure distances and areas on floor plans, blueprints, maps and images – free, in your browser, no upload, no sign-up.**
 
-👉 **Open the tool: [bohannjein.github.io/pixelscale](https://bohannjein.github.io/pixelscale/)**
+<a href="https://bohannjein.github.io/pixelscale/"><img src="assets/open-tool.svg" alt="Open PixelScale – measure floor plans online" height="56"></a>
 
 PixelScale is a free online tool to measure square footage and room sizes from a floor plan image. Upload a floor plan (JPG or PNG), calibrate the scale once against a known length, and every click becomes a real-world measurement in metres, centimetres, square metres, feet, inches or square feet. Export the annotated plan with all measurements as a PDF.
 
@@ -71,7 +71,7 @@ Accuracy depends on the calibration and the image resolution. Zoom in on the end
 
 PixelScale ist ein kostenloses Online-Tool, um **Grundrisse auszumessen** und die **Wohnfläche bzw. Quadratmeter aus einem Grundriss zu berechnen** – direkt im Browser, ohne Upload und ohne Anmeldung. Grundriss als Bild laden, Maßstab einmal kalibrieren und anschließend Strecken in Metern und Flächen in m² messen. Mehrere Räume lassen sich in Gruppen ordnen, die Gesamtfläche wird automatisch summiert, und das Ergebnis kann als PDF exportiert werden. Die Oberfläche ist auf Deutsch umschaltbar.
 
-👉 **[Jetzt Grundriss messen](https://bohannjein.github.io/pixelscale/)**
+<a href="https://bohannjein.github.io/pixelscale/"><img src="assets/open-tool-de.svg" alt="Grundriss jetzt online messen mit PixelScale" height="56"></a>
 
 ## Notes & limits
 

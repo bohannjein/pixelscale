@@ -6,8 +6,46 @@
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f5f5f5" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1e1e1e" media="(prefers-color-scheme: dark)">
-<meta name="description" content="Measure distances and areas on floor plans and images right in your browser. Calibrate a scale, no upload, no account.">
-<title>Measure on image · floor plan distances & areas in the browser</title>
+<title>PixelScale – Measure Floor Plans Online | Area &amp; Distance</title>
+<meta name="description" content="Free online floor plan measuring tool: calibrate the scale, measure room sizes, distances and area in m² or ft², export as PDF. No upload, no sign-up.">
+<link rel="canonical" href="https://bohannjein.github.io/pixelscale/">
+<meta name="robots" content="index,follow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%230d99ff'/%3E%3Cpath d='M6 18 18 6M6 14v4h4M18 10V6h-4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PixelScale">
+<meta property="og:url" content="https://bohannjein.github.io/pixelscale/">
+<meta property="og:title" content="PixelScale – Measure Floor Plans Online">
+<meta property="og:description" content="Measure distances and areas on floor plans, blueprints and images in your browser. Free, private, no upload.">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="de_DE">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PixelScale – Measure Floor Plans Online">
+<meta name="twitter:description" content="Measure distances and areas on floor plans, blueprints and images in your browser. Free, private, no upload.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "PixelScale",
+  "url": "https://bohannjein.github.io/pixelscale/",
+  "description": "Free online tool to measure distances and areas on floor plans, blueprints, maps and images. Calibrate the scale against a known length, measure in metric or imperial units and export an annotated PDF. Runs entirely in the browser.",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "Any (web browser)",
+  "browserRequirements": "Requires JavaScript and a modern web browser",
+  "inLanguage": ["en", "de"],
+  "isAccessibleForFree": true,
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+  "featureList": [
+    "Scale calibration from a known distance",
+    "Distance measurement along polylines",
+    "Area measurement in m² and ft²",
+    "Snapping to existing points",
+    "Grouped, colour-coded measurements",
+    "Metric and imperial units",
+    "PDF export",
+    "No upload – data stays in the browser"
+  ]
+}
+</script>
 <script>
   (function(){var t=null;try{t=localStorage.getItem('pixelscale.theme');}catch(e){}
     document.documentElement.dataset.theme=t||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');})();
@@ -188,8 +226,8 @@
   .drop-ic{width:40px;height:40px;border-radius:8px;display:grid;place-items:center;color:var(--muted);
     background:var(--fill);border:1px dashed var(--border)}
   .drop-ic .ic{width:20px;height:20px}
-  #dropMain{font-size:13px;font-weight:600}
-  #dropSub{font-size:11px;color:var(--muted);margin-top:-6px}
+  #dropMain{font-size:14px;font-weight:600}
+  #dropSub{font-size:11px;line-height:1.5;color:var(--muted);margin-top:-6px;max-width:260px}
   #pick{pointer-events:auto;margin-top:4px}
 
   /* ---------- dialog + toast ---------- */
@@ -273,9 +311,9 @@
 <div id="drop">
   <div class="drop-card glass">
     <div class="drop-ic"><svg class="ic"><use href="#i-upload"/></svg></div>
-    <div id="dropMain"></div>
-    <div id="dropSub"></div>
-    <button class="btn primary" id="pick"><svg class="ic"><use href="#i-image"/></svg><span id="t-pick"></span></button>
+    <h1 id="dropMain">Measure floor plans online</h1>
+    <p id="dropSub">Drop a floor plan, blueprint or image here to measure distances and areas. It stays on your device — nothing is uploaded.</p>
+    <button class="btn primary" id="pick"><svg class="ic"><use href="#i-image"/></svg><span id="t-pick">Choose image</span></button>
     <input type="file" id="file" accept="image/*" hidden>
   </div>
 </div>
@@ -353,7 +391,7 @@ const I18N={
     addGroup:'Add group', setActive:'Set as active group', scaleLbl:'Scale',
     cfGroup:'Delete this group and its measurements?', grp:'Group',
     exportBtn:'Export PDF', resetBtn:'Reset', newBtn:'New image',
-    ctl:'Controls', dropMain:'Drop a floor plan or image', dropSub:'Stays on your device — nothing is uploaded.', choose:'Choose image',
+    ctl:'Controls', dropMain:'Measure floor plans online', dropSub:'Drop a floor plan, blueprint or image here to measure distances and areas. It stays on your device — nothing is uploaded.', choose:'Choose image',
     distance:'Distance', area:'Area', calibration:'Calibration', scaleMissing:'— (no scale)',
     alNeed2:'First click two points on the known distance.',
     alLen:'Enter a valid length in metres.', alNoMeas:'No measurements to export.',
@@ -373,7 +411,7 @@ const I18N={
     addGroup:'Gruppe hinzufügen', setActive:'Als aktive Gruppe setzen', scaleLbl:'Maßstab',
     cfGroup:'Diese Gruppe samt Messungen löschen?', grp:'Gruppe',
     exportBtn:'PDF exportieren', resetBtn:'Zurücksetzen', newBtn:'Neues Bild',
-    ctl:'Steuerung', dropMain:'Grundriss oder Bild hierher ziehen', dropSub:'Bleibt auf deinem Gerät — nichts wird hochgeladen.', choose:'Bild wählen',
+    ctl:'Steuerung', dropMain:'Grundriss online ausmessen', dropSub:'Grundriss, Bauplan oder Bild hierher ziehen, um Strecken und Flächen zu messen. Bleibt auf deinem Gerät — nichts wird hochgeladen.', choose:'Bild wählen',
     distance:'Strecke', area:'Fläche', calibration:'Kalibrierung', scaleMissing:'— (Maßstab fehlt)',
     alNeed2:'Erst zwei Punkte auf der bekannten Strecke klicken.',
     alLen:'Gültige Länge in Metern eintragen.', alNoMeas:'Keine Messungen zum Exportieren.',
